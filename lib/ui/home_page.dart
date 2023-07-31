@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:buscador_gif/ui/gif_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_share/flutter_share.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -107,7 +109,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   int _getCount(List data) {
-    if (_search == null) {
+    if (_search == null || _search!.isEmpty) {
       return data.length;
     } else {
       return data.length + 1;
@@ -126,17 +128,26 @@ class _HomePageState extends State<HomePage> {
       itemBuilder: (context, index) {
         if (_search == null || index < snapshot.data['data'].length)
           return GestureDetector(
-            child: Image.network(
-              snapshot.data["data"][index]["images"]["fixed_height"]["url"],
+            child: FadeInImage.memoryNetwork(
+              placeholder: kTransparentImage,
+              image: snapshot.data["data"][index]["images"]["fixed_height"]
+                  ["url"],
               height: 300,
               fit: BoxFit.cover,
             ),
             onTap: () {
               Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          GifPage(gifData: snapshot.data['data'][index])));
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        GifPage(gifData: snapshot.data['data'][index])),
+              );
+            },
+            onLongPress: () {
+              share(
+                  snapshot.data["data"][index]["images"]["fixed_height"]["url"]
+                      .toString(),
+                  snapshot.data["data"][index]['title']);
             },
           );
         else
@@ -161,5 +172,13 @@ class _HomePageState extends State<HomePage> {
           );
       },
     );
+  }
+
+  Future<void> share(String link, String title) async {
+    await FlutterShare.share(
+        title: 'Compartilhar Gif',
+        text: 'Compartilhe com quem desejar essa gif...',
+        linkUrl: link,
+        chooserTitle: title);
   }
 }
